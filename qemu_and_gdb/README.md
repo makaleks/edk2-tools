@@ -1,4 +1,4 @@
-# GNU GDB & UEFI images
+# QEMU & GDB
 
 The provided script is aimed at saving your time while following edk2 official
 [guide about debugging with GDB]. Manual search and string manipulations from
