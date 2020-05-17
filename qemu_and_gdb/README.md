@@ -6,6 +6,8 @@ official
 Manual search and string manipulations from that guide takes many steps before
 getting any significant result, which makes it an evident field for improvement.
 
+![demo gif not loaded](docs/blob/gdb_works.gif)
+
 ## Environment (pre-installation)
 
 This chapter covers how to build OVMF and prepare the QEMU environment. If you
