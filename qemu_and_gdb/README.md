@@ -1,9 +1,10 @@
 # QEMU & GDB
 
-The provided script is aimed at saving your time while following edk2 official
-[guide about debugging with GDB]. Manual search and string manipulations from
-that guide takes many steps before getting any significant result, which makes
-it an evident field for improvement.
+The provided script is aimed at saving the developer's time while following edk2
+official
+[guide about debugging UEFI apps with GDB](https://github.com/tianocore/tianocore.github.io/wiki/How-to-debug-OVMF-with-QEMU-using-GDB).
+Manual search and string manipulations from that guide takes many steps before
+getting any significant result, which makes it an evident field for improvement.
 
 ## Environment (pre-installation)
 
@@ -33,8 +34,9 @@ development environment for Linux, with `QEMU` (emulator), `GNU GDB` (debugger),
    ```bash
    . ./edksetup.sh BaseTools
    ```
-1. First, choose your runtime environment to run QEMU. Inside, create a
-   directory for UEFI images (here, named 'hda-contents'):
+1. Choose any directory on your filesystem to be a runtime environment to run
+   QEMU. Inside, create a directory for UEFI images (here, named
+   'hda-contents'):
    ```bash
    mkdir -p uefi-env/hda-contents
    ```
@@ -77,7 +79,7 @@ development environment for Linux, with `QEMU` (emulator), `GNU GDB` (debugger),
 ## Installation
 
 Assuming your OVMF environment is similar to the described in the previous
-chapter, it is simple to prepare the script:
+chapter, prepare the script:
 
 ```bash
 git clone https://github.com/makaleks/edk2-tools
