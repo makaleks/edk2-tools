@@ -1,0 +1,30 @@
+
+[Defines]
+  INF_VERSION                    = 1.25
+  BASE_NAME                      = LibMyProject
+  FILE_GUID                      = 82a58540-ce50-4de8-b87c-b36450bd1ba7
+  MODULE_TYPE                    = UEFI_DRIVER
+  LIBRARY_CLASS                  = LibMyProject|DXE_DRIVER UEFI_APPLICATION UEFI_DRIVER
+  VERSION_STRING                 = 1.0
+
+
+[Sources]
+  LibMyProject.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  SimpleFileInteractionExample/SimpleFileInteractionExample.dec
+  
+[LibraryClasses]
+  BaseLib
+  DevicePathLib
+  
+[Guids]
+
+[Ppis]
+
+[Protocols]
+
+[FeaturePcd]
+
+[Pcd]

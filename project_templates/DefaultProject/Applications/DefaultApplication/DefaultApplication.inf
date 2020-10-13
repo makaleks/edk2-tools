@@ -1,0 +1,29 @@
+
+[Defines]
+  INF_VERSION                    = 1.25
+  BASE_NAME                      = MyProject
+  FILE_GUID                      = e6cd0659-7b7b-4e17-b4dc-a3f34a2265d5
+  MODULE_TYPE                    = UEFI_APPLICATION
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = UefiMain
+
+[Sources]
+  MyProject.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MyProject/MyProject.dec
+  
+[LibraryClasses]
+  UefiApplicationEntryPoint
+  UefiLib
+  
+[Guids]
+
+[Ppis]
+
+[Protocols]
+
+[FeaturePcd]
+
+[Pcd]

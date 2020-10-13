@@ -1,0 +1,17 @@
+
+[Defines]
+  DEC_SPECIFICATION = 0x00010005
+  PACKAGE_NAME      = MyProject
+  PACKAGE_GUID      = 6a1e2e2d-6bfc-452c-bd79-67e64af01fd0
+  PACKAGE_VERSION   = 1.0
+
+[Includes]
+  Include
+  Debug
+
+[LibraryClasses]
+  LibMyProject|Include/Library/LibMyProject.h
+
+[Protocols]
+
+[Guids]
