@@ -7,3 +7,5 @@ development), that worth sharing.
   `compile_commands.json` file, that can be used by completion engines
 - [qemu_and_gdb](qemu_and_gdb/) allows to pring `gdb` command, that loads
   `.debug` file with debug symbols at a correct address, based on `qemu` logs
+- [project_templates](project_templates/) allows to create a new edk2-project in
+  a single command call
