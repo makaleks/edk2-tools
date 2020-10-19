@@ -1,22 +1,46 @@
 
 [Defines]
   INF_VERSION                    = 1.25
-  BASE_NAME                      = MyProject
-  FILE_GUID                      = e6cd0659-7b7b-4e17-b4dc-a3f34a2265d5
+  BASE_NAME                      = <AppName>
+  FILE_GUID                      = <Guid>
   MODULE_TYPE                    = UEFI_APPLICATION
   VERSION_STRING                 = 1.0
+# <BLOCK-BEGIN app>
   ENTRY_POINT                    = UefiMain
+# <BLOCK-END>
+# <BLOCK-BEGIN capp>
+  ENTRY_POINT                    = ShellCEntryLib
+# <BLOCK-END>
 
 [Sources]
-  MyProject.c
+  <AppName>.c
+  ../../Debug/Debug.h
 
 [Packages]
   MdePkg/MdePkg.dec
-  MyProject/MyProject.dec
+# <BLOCK-BEGIN capp>
+  StdLib/StdLib.dec
+  ShellPkg/ShellPkg.dec
+# <BLOCK-END>
+  <PackagePath><PackageName>/<PackageName>.dec
   
 [LibraryClasses]
+# <BLOCK-BEGIN app>
   UefiApplicationEntryPoint
+# <BLOCK-END>
+# <BLOCK-BEGIN capp>
+  # C-lib
+  LibC
+  # lib for stdio
+  LibStdio
+  # lib, required for fopen()
+  DevShell
+# <BLOCK-END>
   UefiLib
+
+# <BLOCK-BEGIN lib clib>
+  <LibName>
+# <BLOCK-END>
   
 [Guids]
 

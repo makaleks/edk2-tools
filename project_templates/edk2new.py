@@ -14,14 +14,24 @@ FlagOnly = ''
 ThisFileDirPath = os.path.abspath(os.path.dirname(__file__))
 DestDirPath = ''
 
+def print_log(dbg_show, log_str):
+    if dbg_show:
+        print(log_str)
+
 def my_get_uuid(*args):
     return str(uuid.uuid4())
 
 def get_app_name(args):
-    if args.app is FlagOnly:
-        return args.ProjectName
+    if args.app is not None:
+        if args.app is FlagOnly:
+            return args.ProjectName
+        else:
+            return args.app
     else:
-        return args.app
+        if args.capp is FlagOnly:
+            return args.ProjectName
+        else:
+            return args.capp
 
 def get_driver_name(args):
     if args.driver is FlagOnly:
@@ -50,6 +60,9 @@ def _to_include_guard_base(s):
         result += c.upper()
     return result
 
+def get_package_name_macro(args):
+    return _to_include_guard_base(get_package_name(args))
+
 def get_lib_include_guard(args):
     return _to_include_guard_base(get_lib_name(args) + 'H')
 
@@ -69,6 +82,7 @@ def get_package_prefix(args):
 
 single_tag_list = [
     {'tag': 'PackageName',          'replace-by': get_package_name},
+    {'tag': 'PackageNameMacro',     'replace-by': get_package_name_macro},
     {'tag': 'PackagePath',          'replace-by': get_package_prefix},
     {'tag': 'Guid',                 'replace-by': my_get_uuid},
     {'tag': 'LibName',              'replace-by': get_lib_name},
@@ -88,29 +102,28 @@ TAG_BLOCK_BEGIN = 'BLOCK-BEGIN'
 TAG_BLOCK_END   = 'BLOCK-END'
 
 #tag_block_list = ['lib', 'driver', 'app', 'clib', 'capp', 'protocol']
-tag_block_list = ['lib', 'driver', 'app', 'clib', 'capp']
+#tag_block_list = ['lib', 'driver', 'app', 'clib', 'capp']
+tag_block_list = ['lib', 'driver', 'app', 'capp']
 
 def get_tag_block_begin (tag_str):
     return '<{} {}>'.format(TAG_BLOCK_BEGIN, tag_str)
 def get_tag_block_end ():
     return '<{}>'.format(TAG_BLOCK_END)
 
-def get_line_after_any_only_comment (line):
-    comment_lines = ['#', '//']
-    for delimiter in comment_lines:
-        code_delimiter_comment = line.partition(delimiter)
-        if (
-            '' != code_delimiter_comment[0].rstrip()
-            or '' == code_delimiter_comment[1]
-            or '' == code_delimiter_comment[2]
-        ):
-            continue
+def get_line_after_any_only_comment (line, comment_str):
+    code_delimiter_comment = line.partition(comment_str)
+    if (
+        '' != code_delimiter_comment[0].rstrip()
+        or '' == code_delimiter_comment[1]
+        or '' == code_delimiter_comment[2]
+    ):
+        return ''
+    else:
         return code_delimiter_comment[2].strip()
-    return ''
 
-def line_contains_tag_block_begin (line):
+def line_contains_tag_block_begin (line, comment_str):
     result_match = []
-    comment_content = get_line_after_any_only_comment(line)
+    comment_content = get_line_after_any_only_comment(line, comment_str)
     if not comment_content:
         return result_match
     pattern = re.compile(
@@ -129,15 +142,15 @@ def line_contains_tag_block_begin (line):
 
     return result_match
 
-def line_contains_tag_block_end (line):
-    code_hash_comment = line.partition('#')
+def line_contains_tag_block_end (line, comment_str):
+    code_delimiter_comment = line.partition(comment_str)
     if (
-        '' != code_hash_comment[0].rstrip()
-        or code_hash_comment[1] == ''
-        or code_hash_comment[2] == ''
+        '' != code_delimiter_comment[0].rstrip()
+        or code_delimiter_comment[1] == ''
+        or code_delimiter_comment[2] == ''
     ):
         return False
-    comment_content = code_hash_comment[2].strip()
+    comment_content = code_delimiter_comment[2].strip()
     pattern = re.compile('^{}$'.format(get_tag_block_end()), re.ASCII)
     if pattern.match(comment_content):
         return True
@@ -184,7 +197,9 @@ def replace_tag_in_line (args, line, use_origin = False):
 
     return line
 
-def process_line_with_comment (args, line, erase_most = False, use_origin = False):
+def process_line_with_comment (
+    args, line, comment_str, erase_most = False, use_origin = False, dbg_filename = None
+):
     if line == '':
         # Do nothing with empty lines, even removing
         return line
@@ -192,13 +207,13 @@ def process_line_with_comment (args, line, erase_most = False, use_origin = Fals
     if not args.verbose and not line.isspace():
         # If line is comment-only, return it
         non_whitespace_ids = len(line) - len(line.lstrip())
-        if line[non_whitespace_ids] == '#':
+        if line[non_whitespace_ids] == comment_str:
             # Delete comment-only line
             return None
         # Remove comment from line
-        line = line.split('#')[0].rstrip()
+        line = line.split(comment_str)[0].rstrip()
     # Unplug comment to prevent its replacement
-    code_hash_comment = line.partition('#')
+    code_hash_comment = line.partition(comment_str)
     if not erase_most:
         line = (
             replace_tag_in_line(args, code_hash_comment[0])
@@ -217,30 +232,51 @@ def is_current_tag_block_requested(tag_stack, requested_targets):
             return False
     return True
 
-def process_file_content (args, file_content, requested_targets):
+def process_file_content (
+    args, file_content, comment_str, requested_targets, dbg_show = None
+):
     result_file_content = ''
     tag_stack = []
+    print_log(dbg_show, '# Running process_file_content:')
     for line in file_content.splitlines():
-        if '#' in line:
+        dbg_str = '- Line: {}\n  '.format(line)
+        if comment_str in line:
             # Check tag-block comments
-            tags_found = line_contains_tag_block_begin(line)
+            tags_found = line_contains_tag_block_begin(line, comment_str)
             if tags_found:
                 tag_stack.append(tags_found)
+
+                dbg_str = '{}Found tag_begin({}), total({})'.format(
+                    dbg_str, tags_found, tag_stack
+                )
+                print_log(dbg_show, dbg_str)
                 continue
-            if line_contains_tag_block_end(line):
+            if line_contains_tag_block_end(line, comment_str):
                 if not tag_stack:
                     print("Warning: unexpected tag_end")
                 else:
                     tag_stack.pop()
+
+                    dbg_str = '{}Found tag_end, total({})'.format(
+                        dbg_str, tag_stack
+                    )
+                    print_log(dbg_show, dbg_str)
                 continue
 
         if not tag_stack or is_current_tag_block_requested(
             tag_stack, requested_targets
         ):
-            line = process_line_with_comment(args, line)
+            line = process_line_with_comment(args, line, comment_str)
             if line is None:
                 continue
             result_file_content += line + '\n'
+
+            dbg_str = '{}Done: {}'.format(dbg_str, line)
+        else:
+            dbg_str = '{}Not allowed for args: {}'.format(
+                dbg_str, args
+            )
+        print_log(dbg_show, dbg_str)
     return result_file_content
 
 def is_section(line, section_name):
@@ -252,9 +288,9 @@ def is_section(line, section_name):
         section_name = '['
     return line.lstrip()[0:len(section_name)] == section_name
 
-def line_to_origin_outcome_pair(args, line):
+def line_to_origin_outcome_pair(args, line, comment_str):
     def _rm_project_prefix(args, path):
-        if os.path.commonprefix([path, args.ProjectName]):
+        if os.path.commonpath([path, args.ProjectName]):
             path = os.path.relpath(path, args.ProjectName)
         return path
     def _extract_path(args, line):
@@ -264,10 +300,10 @@ def line_to_origin_outcome_pair(args, line):
         return line
 
     line_origin = process_line_with_comment(
-        args, line, erase_most=True, use_origin=True
+        args, line, comment_str, erase_most=True, use_origin=True
     )
     line_outcome = process_line_with_comment(
-        args, line, erase_most=True, use_origin=False
+        args, line, comment_str, erase_most=True, use_origin=False
     )
     if not line_origin:
         return None
@@ -285,16 +321,23 @@ def line_to_origin_outcome_pair(args, line):
 # Returns
 # { "excluded_dirs": [],
 #   "path_mappings":  [{"src_path", "dest_path"}] }
-def get_dirs_info_from_dsc(args, dsc_content, requested_targets):
+def get_dirs_info_from_dsc(
+    args, dsc_content, requested_targets, dbg_show = None
+):
     # Help someone me to make it Better
     excluded_dirs = []
     path_mappings = []
 
     is_component = False # [Components] section in .dsc-file
     tag_stack    = []
+
+    print_log(dbg_show, '# Running get_dirs_info_from_dsc:')
+    dbg_is_components_section_found = False
     for line in dsc_content.splitlines():
         if not is_component:
             if is_section(line, 'Components'):
+                dbg_is_components_section_found = True
+                print_log(dbg_show, '[Components] section found')
                 is_component = True
         elif is_component:
             if is_section(line, ''):
@@ -305,19 +348,30 @@ def get_dirs_info_from_dsc(args, dsc_content, requested_targets):
                         + str(tag_stack)
                     )
                 break
+            dbg_str = '- Line: {}\n  '.format(line)
 
-            tags_found = line_contains_tag_block_begin(line)
+            tags_found = line_contains_tag_block_begin(line, '#')
             if tags_found:
                 tag_stack.append(tags_found)
+
+                dbg_str = '{}Found tag_end, total_list({})'.format(
+                    dbg_str, tag_stack
+                )
+                print_log(dbg_show, dbg_str)
                 continue
-            if line_contains_tag_block_end(line):
+            if line_contains_tag_block_end(line, '#'):
                 if not tag_stack:
                     print("Warning: unexpected tag_end")
                 else:
                     tag_stack.pop()
+
+                    dbg_str = '{}Found tag_end, total_list({})'.format(
+                        dbg_str, tag_stack
+                    )
+                    print_log(dbg_show, dbg_str)
                 continue
 
-            lines_map = line_to_origin_outcome_pair(args, line)
+            lines_map = line_to_origin_outcome_pair(args, line, '#')
             if not lines_map:
                 continue
 
@@ -326,14 +380,23 @@ def get_dirs_info_from_dsc(args, dsc_content, requested_targets):
             ):
                 dirname = os.path.dirname(lines_map['origin'])
                 excluded_dirs.append(dirname)
+
+                dbg_str = '{}excluded_dirs += {}'.format(
+                    dbg_str, excluded_dirs
+                )
             else:
                 path_mappings.append({ "src_path":  lines_map['origin'],
                                       "dest_path": lines_map['outcome'] })
-    return { 'excluded_dirs': excluded_dirs,
-             'path_mappings': path_mappings }
+    result = { 'excluded_dirs': excluded_dirs,
+               'path_mappings': path_mappings }
+    if not dbg_is_components_section_found:
+        print_log(dbg_show, '[Components] section was not found!')
+    else:
+        print_log(dbg_show, '  Processing result: {}'.format(result))
+    return result
 
 def get_requested_targets(args):
-    requestable = ['app', 'capp', 'lib', 'clib', 'driver']
+    requestable = tag_block_list
     #print(args)
     requested_targets = {
             field_name for field_name in requestable
@@ -343,7 +406,7 @@ def get_requested_targets(args):
     return requested_targets
 
 def is_file_must_be_ignored(relative_path, dirs_info):
-    if os.path.commonprefix(['Include/', relative_path]):
+    if os.path.commonpath(['Include/', relative_path]):
         # excluding from Include/ is a special case
         for d in dirs_info['excluded_dirs']:
             dirname = os.path.basename(d)
@@ -352,12 +415,12 @@ def is_file_must_be_ignored(relative_path, dirs_info):
                 return True
     else:
         for d in dirs_info['excluded_dirs']:
-            if os.path.commonprefix([d, relative_path]):
+            if os.path.commonpath([d, relative_path]):
                 return True
     return False
 
 def replace_to_dest_if_src_exists(dirs_info, relative_path):
-    if os.path.commonprefix(['Include/', relative_path]):
+    if os.path.commonpath(['Include/', relative_path]):
         # excluding from Include/ is a special case
         (path_before_ext, path_ext) = os.path.splitext(os.path.basename(relative_path))
         for pair in dirs_info['path_mappings']:
@@ -393,6 +456,7 @@ def create_file_from_template(
     src_path = os.path.abspath(os.path.join(
         ThisFileDirPath, args.template, relative_path
     ))
+    #print('src_path: {}'.format(src_path))
     src_content = Path(src_path).read_text()
     dest_path = os.path.abspath(os.path.join(
         DestDirPath, replace_to_dest_if_src_exists(dirs_info, relative_path)
@@ -404,12 +468,26 @@ def create_file_from_template(
             replace_filename + os.path.splitext(dest_path)[1]
         )
 
-    dest_content = process_file_content(args, src_content, requested_targets)
+    _, extension = os.path.splitext(src_path)
+    extensions_for_c = ['.c', '.h']
+    if extension in extensions_for_c:
+        comment_str = '//'
+    else:
+        comment_str = '#'
+
+    dbg_show = False
+    #if src_path.endswith('DefaultApplication.c'):
+    #    dbg_show = True
+
+    dest_content = process_file_content(
+        args, src_content, comment_str, requested_targets, dbg_show
+    )
     Path(os.path.dirname(dest_path)).mkdir(parents = True, exist_ok = True)
     dest_content = Path(dest_path).write_text(dest_content)
 
 def create_project(args, template_dir_path):
     template_abs_dir_path = os.path.join(ThisFileDirPath, template_dir_path)
+    #print('template_dir: {}'.format(template_abs_dir_path))
     dsc_src_pattern = os.path.join(template_abs_dir_path, "*.dsc")
     dsc_src_all_paths = glob.glob(dsc_src_pattern)
     # No true need for building in edk2, but simplifies templates
@@ -427,7 +505,7 @@ def create_project(args, template_dir_path):
 
     dsc_content = Path(dsc_src_path).read_text()
     dirs_info = get_dirs_info_from_dsc(
-        args, dsc_content, requested_targets
+        args, dsc_content, requested_targets#, dbg_show=True
     )
     #import json
     #print('dirs_info: {}'.format(json.dumps(dirs_info, indent=4)))
@@ -490,10 +568,11 @@ Template is a tree of text files, that support:
         'ProjectName', type=str,
         help="a base project name"
     )
-    parser.add_argument(
-        '--edk2-root', nargs=1, type=str, default='./',
-        help ="set the EDK2 root path"
-    )
+    # unimplemented
+    #parser.add_argument(
+    #    '--edk2-root', nargs=1, type=str, default='./',
+    #    help ="set the EDK2 root path"
+    #)
     parser.add_argument(
         '--prefix', nargs=1, type=str, default='',
         help ="store the project in subdirectory, set prefix"
@@ -513,11 +592,12 @@ Template is a tree of text files, that support:
         default=NotPassed, const=FlagOnly,
         help="add UEFI library"
     )
-    parser.add_argument(
-        '-cl', '--clib', nargs='?', type=str,
-        default=NotPassed, const=FlagOnly,
-        help="add C library"
-    )
+    # untested & requires some control that it is not linked with driver
+    #parser.add_argument(
+    #    '-cl', '--clib', nargs='?', type=str,
+    #    default=NotPassed, const=FlagOnly,
+    #    help="add C library"
+    #)
     parser.add_argument(
         '-d', '--driver', nargs='?', type=str,
         default=NotPassed, const=FlagOnly,

@@ -1,14 +1,19 @@
 /**
- * @file LibMyProject.h
+ * @file <LibName>.h
  *
  * @brief <your-brief>
  *
  * @copyright <your-copyright>
  */
 
+#ifndef <LibIncludeGuard>
+#define <LibIncludeGuard>
+
+#include <Uefi.h>
+
 
 /**
- * Concatenates 2 string into a new one, allocated in heap
+ * Concatenates 2 string into a new one, allocated in heap.
  *
  * @param[in] in_left_string           - string for the left part
  * @param[in] in_right_string          - string for the right part
@@ -25,3 +30,4 @@ EFI_STATUS AllocConcatenated (
     CHAR16       **out_concatenated_string
 );
 
+#endif // <LibIncludeGuard>

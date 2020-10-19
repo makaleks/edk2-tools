@@ -1,14 +1,7 @@
+#include <Library/<LibName>.h>
+#include <Library/BaseLib.h>
 
-
-//
-//
-//
-//
-//
-//
-//
-//
-//
+#include "../../Debug/Debug.h"
 
 // UEFI table of all boot services
 extern EFI_BOOT_SERVICES *gBS;
@@ -42,8 +35,8 @@ EFI_STATUS AllocConcatenated (
     );
     if (EFI_ERROR(Status)) {
         DbgPrintAscii(
-"
-gBS->AllocatePool returned %r (%a:%u)\n",
+"# Error %a: gBS->AllocatePool() returned %r (%a:%u)\n",
+            __func__,
             Status,
             __FILE__,
             __LINE__
@@ -53,12 +46,12 @@ gBS->AllocatePool returned %r (%a:%u)\n",
     gBS->SetMem(concatenated_string, concatenated_string_length + 1, 0);
     gBS->CopyMem(
         concatenated_string,
-        in_left_string,
+        (CHAR16*)in_left_string,
         sizeof(*in_left_string)*left_string_length
     );
     gBS->CopyMem(
         concatenated_string + left_string_length,
-        in_right_string,
+        (CHAR16*)in_right_string,
         sizeof(*in_right_string)*right_string_length
     );
 

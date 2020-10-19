@@ -1,0 +1,53 @@
+## @file
+#
+#  Copyright for UEFI <DriverName>
+#  
+#  License for UEFI <DriverName>
+#  
+##
+
+[Defines]
+  INF_VERSION                    = 1.25
+  BASE_NAME                      = <DriverName>
+  FILE_GUID                      = <Guid>
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = UefiDriverMain
+  UNLOAD_IMAGE                   = UefiDriverUnload
+
+#
+# The following information is for reference only and not required by the build tools.
+#
+#  VALID_ARCHITECTURES           = IA32 X64 IPF EBC Etc...
+#
+
+[Sources]
+  <DriverName>.c
+  ../../Debug/Debug.h
+
+[Packages]
+  MdePkg/MdePkg.dec
+  <PackagePath><PackageName>/<PackageName>.dec
+  
+[LibraryClasses]
+  UefiDriverEntryPoint
+  PrintLib
+  UefiLib
+  #DevicePathLib
+
+[Protocols]
+  
+[Guids]
+
+[Ppis]
+
+[Protocols]
+
+[FeaturePcd]
+
+[Pcd]
+
+[Depex]
+# gEfiSimpleTextOutProtocolGuid AND gEfiHiiDatabaseProtocolGuid AND gEfiVariableArchProtocolGuid AND gEfiVariableWriteArchProtocolGuid
+  TRUE
+

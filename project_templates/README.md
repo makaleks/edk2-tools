@@ -5,4 +5,6 @@ projects makes it more flexible than
 [UEFI Driver Wizard](https://github.com/tianocore/tianocore.github.io/wiki/UEFI-Driver-Wizard).
 In addition, it runs in CLI!
 
-[now most works, but some things are not completely ready yet]
+![demo gif not loaded](docs/blob/completion_enabled.gif)
+
+Use `--help` argument to start expetimenting.

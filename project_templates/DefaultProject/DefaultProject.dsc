@@ -19,6 +19,7 @@
 [LibraryClasses]
 # <BLOCK-BEGIN app lib driver>
   UefiApplicationEntryPoint|MdePkg/Library/UefiApplicationEntryPoint/UefiApplicationEntryPoint.inf
+  UefiDriverEntryPoint|MdePkg/Library/UefiDriverEntryPoint/UefiDriverEntryPoint.inf
   UefiBootServicesTableLib|MdePkg/Library/UefiBootServicesTableLib/UefiBootServicesTableLib.inf
   UefiLib|MdePkg/Library/UefiLib/UefiLib.inf
   UefiRuntimeServicesTableLib|MdePkg/Library/UefiRuntimeServicesTableLib/UefiRuntimeServicesTableLib.inf
@@ -79,7 +80,7 @@
 # <BLOCK-BEGIN lib clib>
 # Library
 # Without additional defined
-  <LibName>|<PackagePath><PackageName>/Library/<LibName:DefaultLib>/<LibName:DefaultLib>.inf
+  <PackagePath><PackageName>/Library/<LibName:DefaultLib>/<LibName:DefaultLib>.inf
 
 # With additional defined
 
@@ -89,8 +90,12 @@
 #  }
 # <BLOCK-END>
 
-# <BLOCK-BEGIN app>
-  <AppName>|<PackagePath><PackageName>/Applications/<AppName:DefaultApplication>/<AppName:DefaultApplication>.inf
+# <BLOCK-BEGIN app capp>
+  <PackagePath><PackageName>/Applications/<AppName:DefaultApplication>/<AppName:DefaultApplication>.inf
+# <BLOCK-END>
+
+# <BLOCK-BEGIN driver>
+  <PackagePath><PackageName>/Drivers/<DriverName:DefaultDriver>/<DriverName:DefaultDriver>.inf
 # <BLOCK-END>
 
 [Components.IA32]
