@@ -184,10 +184,13 @@ def replace_tag_in_line (args, line, use_origin = False):
         # for ['str1', 'TAG', 'str2', 'TAG']
         # iterate ('str1', 'TAG'), ('str2', 'TAG')
         for tag_entry_str, after_tag_str in zip(splitted[1::2], splitted[2::2]):
-            tag_origin = re.match(
-                r'<(?:{})(?::(\w+))?>'.format(tag_candidate['tag']),
-                tag_entry_str
-            )[1]
+            try:
+                tag_origin = re.match(
+                    r'<(?:{})(?::(\w+))?>'.format(tag_candidate['tag']),
+                    tag_entry_str
+                )[1]
+            except:
+                tag_origin = ''
             tag_replacement = replace_tag_by_itself(tag_candidate, args)
             if use_origin and tag_origin:
                 tag_replacement = tag_origin
@@ -574,7 +577,7 @@ Template is a tree of text files, that support:
     #    help ="set the EDK2 root path"
     #)
     parser.add_argument(
-        '--prefix', nargs=1, type=str, default='',
+        '--prefix', nargs='?', type=str, default='',
         help ="store the project in subdirectory, set prefix"
     )
     parser.add_argument(
