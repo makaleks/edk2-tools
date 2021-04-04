@@ -18,10 +18,10 @@ UefiMain (
     IN EFI_SYSTEM_TABLE *SystemTable
 ) {
 // <BLOCK-END>
-    Print(L"EFI-c-app <AppName> starts\n");
+    Print(L"EFI-app <AppName> starts\n");
 // <BLOCK-BEGIN capp>
 int main (int argc, char *argv[]) {
-    Print(L"EFI-app <AppName> starts\n");
+    Print(L"EFI-c-app <AppName> starts\n");
 // <BLOCK-END>
     EFI_STATUS Status = EFI_SUCCESS;
 
