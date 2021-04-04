@@ -168,10 +168,10 @@ Only app:       App=<BaseName>
 '''
 
 def replace_tag_by_itself(tag_entry, args):
-    #try:
-        return str(tag_entry['replace-by'](args) or '')
-    #except:
-    #    return ''
+    try:
+       return str(tag_entry['replace-by'](args) or '')
+    except:
+        return ''
 
 def replace_tag_in_line (args, line, use_origin = False):
     #origin_line = line
@@ -180,24 +180,32 @@ def replace_tag_in_line (args, line, use_origin = False):
         splitted = re.split(
             r'(<{}(?::\w+)?>)'.format(tag_candidate['tag']), line
         )
-        new_line = splitted[0]
-        # for ['str1', 'TAG', 'str2', 'TAG']
-        # iterate ('str1', 'TAG'), ('str2', 'TAG')
-        for tag_entry_str, after_tag_str in zip(splitted[1::2], splitted[2::2]):
-            try:
-                tag_origin = re.match(
-                    r'<(?:{})(?::(\w+))?>'.format(tag_candidate['tag']),
-                    tag_entry_str
-                )[1]
-            except:
-                tag_origin = ''
-            tag_replacement = replace_tag_by_itself(tag_candidate, args)
-            if use_origin and tag_origin:
-                tag_replacement = tag_origin
-            new_line += tag_replacement + after_tag_str
+        new_line = ''
+        tag_extractor = re.compile(
+            r'<(?:{})(?::(\w+))?>'.format(tag_candidate['tag'])
+        )
+        #print("splitted: {}".format(splitted))
+        for splitted_entry in splitted:
+            is_tag = tag_extractor.match(splitted_entry)
+            #print('entry: {}, tag: {}, is_tag: {} ({})'.format(splitted_entry, tag_candidate['tag'], is_tag, True if is_tag else False))
+            tag_origin = ''
+            if not is_tag:
+                new_line += splitted_entry
+            else:
+                try:
+                    tag_origin = is_tag.group(1)
+                except:
+                    tag_origin = ''
+                #print('entry:"{}",match:"{}",group:"{}"'.format(splitted_entry,str(is_tag.groups()),is_tag.group(1)))
+                tag_replacement = replace_tag_by_itself(tag_candidate, args)
+                if use_origin and tag_origin:
+                    tag_replacement = tag_origin
+                new_line += tag_replacement
 
+        #print('new_line: {}, line: {}'.format(new_line, line))
         line = new_line
 
+    #print('done\n')
     return line
 
 def process_line_with_comment (
@@ -293,8 +301,10 @@ def is_section(line, section_name):
 
 def line_to_origin_outcome_pair(args, line, comment_str):
     def _rm_project_prefix(args, path):
-        if os.path.commonpath([path, args.ProjectName]):
-            path = os.path.relpath(path, args.ProjectName)
+        prefix = os.path.join(args.prefix, args.ProjectName)
+        if os.path.commonpath([path, prefix]):
+            #print('# path: {}, prefix: {}, result: {}'.format(path, prefix, os.path.relpath(path, prefix)))
+            path = os.path.relpath(path, prefix)
         return path
     def _extract_path(args, line):
         line = line.strip()
@@ -444,6 +454,7 @@ def replace_to_dest_if_src_exists(dirs_info, relative_path):
                 return result_path
     else:
         (path_before_ext, path_ext) = os.path.splitext(relative_path)
+        #print('path: {}, mappings: {}'.format(relative_path, dirs_info['path_mappings']))
         for pair in dirs_info['path_mappings']:
             (src_before_ext, _) = os.path.splitext(pair['src_path'])
             if src_before_ext == path_before_ext:
@@ -464,7 +475,8 @@ def create_file_from_template(
     dest_path = os.path.abspath(os.path.join(
         DestDirPath, replace_to_dest_if_src_exists(dirs_info, relative_path)
     ))
-    #print('relative_path: {}, src_path: {}, dest_path: {}'.format(relative_path, src_path, dest_path))
+    #print('dest_path: "{}", dirs_info: "{}"\n'.format(dest_path, dirs_info))
+    #print('relative_path: {}, src_path: {}, dest_path: {}\n'.format(relative_path, src_path, dest_path))
     if replace_filename:
         dest_path = os.path.join(
             os.path.dirname(dest_path),
@@ -630,6 +642,9 @@ Template is a tree of text files, that support:
 
     if args.ProjectName[:3].lower == 'lib' and args.app is not NotPassed:
         args.app = args.ProjectName[3:]
+
+    if not args.prefix.endswith(os.sep):
+        args.prefix += os.sep
 
     global DestDirPath
     DestDirPath = os.path.abspath(os.path.join(args.prefix, args.ProjectName))
